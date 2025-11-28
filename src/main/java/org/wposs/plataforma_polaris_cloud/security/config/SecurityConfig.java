@@ -49,9 +49,8 @@ public class SecurityConfig {    //Inyección por constructor
 
     @Bean //Proveedor de autentificación
     public AuthenticationProvider authenticationProvider(AuthService authService) throws Exception {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(authService);
         provider.setPasswordEncoder(passwordEncoder());
-        provider.setUserDetailsService(authService);
         return provider;
     }
 
