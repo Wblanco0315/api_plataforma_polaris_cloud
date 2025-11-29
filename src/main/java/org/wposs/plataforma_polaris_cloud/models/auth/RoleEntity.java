@@ -15,7 +15,8 @@ import org.wposs.plataforma_polaris_cloud.models.auth.enums.RolesEnum;
 public class RoleEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "role_id", unique = true)
     private Long id;
 
     @Column(name = "role_name")

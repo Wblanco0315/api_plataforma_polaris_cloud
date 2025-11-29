@@ -4,19 +4,19 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public record AuthResponse(
-        String token,
         boolean status,
-        String message
+        String message,
+        String token
 ) {
     public static AuthResponse success(String token, String message) {
-        return new AuthResponse(token, true, message);
+        return new AuthResponse(true, message, token);
     }
 
     public static AuthResponse success(String message) {
-        return new AuthResponse(null, true, message);
+        return new AuthResponse(true, message, null);
     }
 
     public static AuthResponse error(String errorMessage) {
-        return new AuthResponse(null, false, errorMessage);
+        return new AuthResponse(false, errorMessage, null);
     }
 }

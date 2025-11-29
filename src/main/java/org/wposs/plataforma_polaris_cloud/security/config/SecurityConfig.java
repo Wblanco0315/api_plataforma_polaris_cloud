@@ -18,6 +18,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.wposs.plataforma_polaris_cloud.security.filters.JwtTokenValidator;
+import org.wposs.plataforma_polaris_cloud.security.services.UserDetailsServiceImpl;
 import org.wposs.plataforma_polaris_cloud.security.services.utils.JWTUtils;
 import org.wposs.plataforma_polaris_cloud.services.AuthService;
 
@@ -47,9 +48,9 @@ public class SecurityConfig {
         return authenticationConfiguration.getAuthenticationManager();
     }
 
-    @Bean //Proveedor de autentificación
-    public AuthenticationProvider authenticationProvider(AuthService authService) throws Exception {
-        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(authService);
+    @Bean // Proveedor de autentificación
+    public AuthenticationProvider authenticationProvider(UserDetailsServiceImpl userDetailsService) throws Exception{
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
