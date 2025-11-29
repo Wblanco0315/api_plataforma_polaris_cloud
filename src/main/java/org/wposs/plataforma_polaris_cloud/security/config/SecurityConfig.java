@@ -25,7 +25,7 @@ import org.wposs.plataforma_polaris_cloud.services.AuthService;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
-public class SecurityConfig {    //Inyección por constructor
+public class SecurityConfig {
     // - Permite construir el filtro de seguridad
     private final JWTUtils jwtUtils;
 
@@ -56,7 +56,7 @@ public class SecurityConfig {    //Inyección por constructor
 
     @Bean //Algoritmo de encriptación de Contraseñas
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(6);
+        return new BCryptPasswordEncoder();
     }
 
 }

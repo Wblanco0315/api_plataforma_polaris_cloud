@@ -11,9 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
-import org.wposs.plataforma_polaris_cloud.models.auth.RoleEntity;
-import org.wposs.plataforma_polaris_cloud.models.auth.UserEntity;
 import org.wposs.plataforma_polaris_cloud.repositories.UserRepository;
 
 import java.util.*;
@@ -32,40 +31,29 @@ public class JWTUtils {
     @Value("${security.jwt.user.generator}")
     private String userGenerator;
 
+
+
     private final UserRepository userRepository;
 
     public String createToken(Authentication authentication) {
         Algorithm algorithm = Algorithm.HMAC256(this.privateKey);
-        String email = authentication.getPrincipal().toString();
+        UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
-        UserEntity user = userRepository.findUserEntityByEmail(email).orElseThrow(
-                () -> new RuntimeException("User not found")
-        );
-        String authorities = authentication.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.joining(","));
-        Set<RoleEntity> rol = user.getRoles();
-
-        ArrayList<RoleEntity> list = new ArrayList<>(rol);
-        String roleName = list.get(0).getRoleEnum().name();
-
-        Map<String, Object> payload = new HashMap<>();
-        payload.put("user_name", user.getFullName());
-        payload.put("role", roleName);
-        payload.put("email", user.getEmail());
+        String authorities = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .collect(Collectors.joining(","));
 
         return JWT.create()
                 .withIssuer(this.userGenerator)
-                .withSubject(user.getEmail())
-                .withPayload(payload)
-                .withIssuedAt(new Date())
-                .withExpiresAt(new Date(System.currentTimeMillis() + 86400000)) //Vencimiento en ms, 1D.
+                .withSubject(userDetails.getUsername()) // El email suele ser el username
                 .withClaim("authorities", authorities)
-                .withJWTId(UUID.randomUUID().toString())
-                .withNotBefore(new Date(System.currentTimeMillis()))//Tiempo de inicio
+                .withIssuedAt(new Date())
+                .withExpiresAt(new Date(System.currentTimeMillis() + 86400000))
                 .sign(algorithm);
     }
 
     // Desencriptación del JWT
-    public DecodedJWT validateToken(String token) {
+    public DecodedJWT decodeToken(String token) {
         DecodedJWT decodedJWT; //Decodificador del token
         Algorithm algorithm = Algorithm.HMAC256(this.privateKey); //Algoritmo de encriptación
         JWTVerifier verifier = JWT.require(algorithm) //Se pasa el mismo algoritmo que se usó al encriptar
@@ -91,10 +79,10 @@ public class JWTUtils {
         }
     }
 
-    //Validación de expiración del token
+    //Validación del expiración del token
     public Boolean isTokenValid(String token) {
         try {
-            DecodedJWT decodedJWT = validateToken(token);
+            DecodedJWT decodedJWT = decodeToken(token);
             return decodedJWT != null && decodedJWT.getExpiresAt().after(new Date());
         } catch (Exception e) {
             log.error("Error validating token: {}", e.getMessage());

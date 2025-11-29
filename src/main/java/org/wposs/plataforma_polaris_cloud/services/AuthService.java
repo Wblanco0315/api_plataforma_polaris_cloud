@@ -3,8 +3,11 @@ package org.wposs.plataforma_polaris_cloud.services;
 import com.auth0.jwt.interfaces.DecodedJWT;
 import jakarta.security.auth.message.AuthException;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -15,6 +18,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.wposs.plataforma_polaris_cloud.dto.auth.AuthResponse;
 import org.wposs.plataforma_polaris_cloud.dto.auth.LoginRequest;
 import org.wposs.plataforma_polaris_cloud.dto.auth.RegisterRequest;
@@ -34,18 +38,21 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class AuthService implements UserDetailsService {
 
+    private static final Logger log = LoggerFactory.getLogger(AuthService.class);
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final JWTUtils jwtUtils;
     private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
 
     @Override
     public UserDetails loadUserByUsername(String email) {
-
         UserEntity userEntity = null;
         try {
-            userEntity = userRepository.findUserEntityByEmail(email).orElseThrow(() -> new AuthException("Usuario No encontrado"));
+            log.info("Buscando usuario por email: {}", email);
+            userEntity = userRepository.findUserEntityByEmail(email).orElseThrow(() -> new AuthException("usuario no registrado"));
         } catch (UsernameNotFoundException | AuthException e) {//No encontro al usuario, arroja la exeption
+            log.error("Error al buscar al usuario: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
 
@@ -55,116 +62,122 @@ public class AuthService implements UserDetailsService {
             // Busca los roles asignados en el registro
             userEntity.getRoles().forEach(role -> authorityList.add(new SimpleGrantedAuthority("ROLE_".concat(role.getRoleEnum().name()))));
 
-            //Envia como respuesta al usuario con sus atributos
-            return new User(userEntity.getEmail(), userEntity.getPassword(), userEntity.isEnabled(), userEntity.isAccountNonExpired(), userEntity.isCredentialsNonExpired(), userEntity.isAccountNonLocked(), authorityList);
         } catch (IllegalArgumentException e) {// Atrapa la exception al no encontrar rol/roles asignados
+            log.error("Roles Invalidos: {}", e.getMessage());
             throw new RuntimeException("Rol/roles no existentes");
         }
 
-    }
+        log.info("Usuario encontrado: {}", userEntity.getEmail());
+        return new User(
+                userEntity.getEmail(),
+                userEntity.getPassword(),
+                userEntity.isEnabled(),
+                userEntity.isAccountNonExpired(),
+                userEntity.isCredentialsNonExpired(),
+                userEntity.isAccountNonLocked(),
+                authorityList
+        );
 
-    //Autenticacion
-    public Authentication authentication(String email, String password) {
-        UserDetails userDetails = this.loadUserByUsername(email);
-        if (userDetails == null) {//Si la cedula no esta registrada genera una exception
-            throw new BadCredentialsException("El usuario " + email + "no existe");
-        }
-        if (!passwordEncoder.matches(password, userDetails.getPassword())) {//si las contraseñas no coincides arroja la exception
-            throw new BadCredentialsException("Password incorrecto");
-        }
-
-        //Genera la autorizacion
-        return new UsernamePasswordAuthenticationToken(email, userDetails.getPassword(), userDetails.getAuthorities());
     }
 
     //Inicio de sesion
-    public AuthResponse loginUser(LoginRequest request) {
-        String email = request.email();
-        String password = request.password();
+    public ResponseEntity<AuthResponse> login(LoginRequest request) {
         String accessToken = "";
-        Authentication authentication = this.authentication(email, password);
-        SecurityContextHolder.getContext().setAuthentication(authentication); //Crea la sesion autorizando al usuario.
+        String rspMessage = "";
+        log.info("Intento de autenticacion con email: {}", request.email());
+        try {
+            Authentication authentication = authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(request.email(), request.password()));
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+            accessToken = jwtUtils.createToken(authentication);
+        } catch (Exception e) {
+            rspMessage = "Error de autenticacion";
+            log.error("Error de autenticacion: {}", e.getMessage());
+            return new ResponseEntity<>(AuthResponse.error(rspMessage), HttpStatus.UNAUTHORIZED);
+        }
 
-        accessToken = jwtUtils.createToken(authentication);//Crea el token de autentificacion con los datos del usuario
-        AuthResponse response = new AuthResponse(accessToken, true);
-
-        return response;
+        rspMessage = "Usuario autenticado con exito";
+        log.info("Usuario autenticado con exito: {}", request.email());
+        return new ResponseEntity<>(AuthResponse.success(accessToken, rspMessage), HttpStatus.OK);
     }
 
 
-    public AuthResponse register(RegisterRequest request) {
-
-        List<String> roleRequest = request.roles().roleListName();
-        System.out.println("Roles:" + roleRequest);
+    @Transactional
+    public ResponseEntity<AuthResponse> register(RegisterRequest request) {
+        String rspMessage = "";
         Set<RoleEntity> roleEntityList;
-
-        try {//Prueba si la lista de roles existe
-            roleEntityList = roleRepository.findRoleEntitiesByRoleEnumIn(roleRequest).stream().collect(Collectors.toSet());//guarda los roles del usuario en una lista
+        log.info("Intento de registro de usuario con email: {}", request.email());
+        try {
+            roleEntityList = roleRepository.findRoleEntitiesByRoleEnumIn(request.roles()).stream().collect(Collectors.toSet());
         } catch (IllegalArgumentException ex) {
-            throw new RuntimeException("Rol/Roles invalidos ");
+            rspMessage = "Roles Invalidos";
+            log.error("Roles Invalidos: {}", ex.getMessage());
+            return new ResponseEntity<>(AuthResponse.error(rspMessage), HttpStatus.BAD_REQUEST);
         }
-        if (roleEntityList.isEmpty()) {
-            throw new IllegalArgumentException("The roles specified does not exist.");
-        } //Verifica si se asignaron roles
 
-        UserEntity newUser = UserEntity.builder().email(request.email()).name(request.username()).password(passwordEncoder.encode(request.password())).roles(roleEntityList).isEnabled(true).isAccountNonExpired(true).isCredentialsNonExpired(true).isAccountNonLocked(true).build();
+        if (roleEntityList.isEmpty()) {
+            rspMessage = "El usuario no tiene roles asignados";
+            log.error(rspMessage);
+            return new ResponseEntity<>(AuthResponse.error(rspMessage), HttpStatus.BAD_REQUEST);
+        }
+
+        UserEntity newUser = UserEntity.builder()
+                .name(request.name())
+                .lastname(request.lastname())
+                .email(request.email())
+                .password(passwordEncoder.encode(request.password()))
+                .isEnabled(true)
+                .isAccountNonExpired(true)
+                .isAccountNonLocked(true)
+                .isCredentialsNonExpired(true)
+                .roles(roleEntityList)
+                .build();
 
         userRepository.save(newUser);
-
-        Authentication authentication = this.authentication(request.email(), request.password());
-        SecurityContextHolder.getContext().setAuthentication(authentication); //Crea la sesion autorizando al usuario.
-        String accessToken = jwtUtils.createToken(authentication);
-        AuthResponse response = new AuthResponse(accessToken, true);
-
-        return response;
+        rspMessage = "Usuario registrado con exito";
+        log.info("Usuario registrado con exito");
+        return new ResponseEntity<>(AuthResponse.success(rspMessage), HttpStatus.CREATED);
     }
 
-    public AuthResponse restorePassword(LoginRequest request) {
-        AuthResponse response = null;
-        Optional<UserEntity> userEntity = null;
+    @Transactional
+    public ResponseEntity<AuthResponse> restorePassword(LoginRequest request) {
+        String rpsMessage = "";
         String encodedNewPassword = passwordEncoder.encode(request.password());
-
+        log.info("Intento de restauracion de contraseña con email: {}", request.email());
         try {
-            userEntity = userRepository.findUserEntityByEmail(request.email());
+            Optional<UserEntity> userEntity = userRepository.findUserEntityByEmail(request.email());
             if (userEntity.isEmpty()) {
-                System.out.println("Usuario no encontrado");
-                response = new AuthResponse(null, false);
-                return response;
+                rpsMessage = "El usuario no esta registrado";
+                log.warn(rpsMessage);
+                return new ResponseEntity<>(AuthResponse.error(rpsMessage), HttpStatus.NOT_FOUND);
             }
-
             userEntity.get().setPassword(encodedNewPassword);
             userRepository.save(userEntity.get());
-            response = loginUser(request);
 
         } catch (Exception e) {
-            System.out.println("Error al restaurar password: " + e.getMessage());
-            return new AuthResponse(null, false);
+            rpsMessage = "Error al restablecer la contraseña:" + e.getMessage();
+            log.error(rpsMessage);
+            return new ResponseEntity<>(AuthResponse.error(rpsMessage), HttpStatus.BAD_REQUEST);
         }
-        return response;
+        rpsMessage = "Contraseña restablecida con exito";
+        log.info(rpsMessage);
+        return new ResponseEntity<>(AuthResponse.success(rpsMessage), HttpStatus.OK);
     }
 
     public ResponseEntity<AuthResponse> logout(String bearerToken) {
         String token = bearerToken.substring(7);
-        AuthResponse response = null;
+        String rspMessage = "";
         try {
-            DecodedJWT decodedJWT = jwtUtils.validateToken(token);
-            if (decodedJWT == null) {
-                return ResponseEntity.badRequest().body(new AuthResponse("Invalid token", false));
+            if (jwtUtils.isTokenValid(token)) {
+                log.warn("Token invalido o expirado");
             }
         } catch (Exception e) {
-            System.out.println("Error al validar el token: " + e.getMessage());
+            log.warn(e.getMessage());
         } finally {
-            response = new AuthResponse("Logout successful", true);
+            rspMessage = "Cierre de sesión exitoso";
+            log.info("Cierre de sesión exitoso");
             SecurityContextHolder.getContext().setAuthentication(null);
         }
-        return ResponseEntity.ok(response);
+        return new ResponseEntity<>(AuthResponse.success(rspMessage), HttpStatus.OK);
     }
 
-    public boolean validateToken(String token) {
-        try {
-            return jwtUtils.isTokenValid(token);
-        } catch (Exception e) {
-            return false;
-        }
-    }
 }

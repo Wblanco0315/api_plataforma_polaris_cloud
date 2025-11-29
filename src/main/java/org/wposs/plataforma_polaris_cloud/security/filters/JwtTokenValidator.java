@@ -33,7 +33,7 @@ public class JwtTokenValidator extends OncePerRequestFilter {
         if (jwtToken != null) {
 
             jwtToken = jwtToken.substring(7);
-            DecodedJWT decodedJWT = jwtUtils.validateToken(jwtToken);
+            DecodedJWT decodedJWT = jwtUtils.decodeToken(jwtToken);
             String username = jwtUtils.getSubject(decodedJWT);
             String stringAuthorities = jwtUtils.getSpecificClaim(decodedJWT, "authorities").asString();
 

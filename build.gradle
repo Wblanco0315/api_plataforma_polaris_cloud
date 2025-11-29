@@ -31,15 +31,30 @@ repositories {
 }
 
 dependencies {
+    //JWT
     implementation 'com.auth0:java-jwt:4.5.0'
+    //JPA
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    //JDBC
     implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+    //Spring Security
     implementation 'org.springframework.boot:spring-boot-starter-security'
+    //Validation
     implementation 'org.springframework.boot:spring-boot-starter-validation'
+    //Spring Web
     implementation 'org.springframework.boot:spring-boot-starter-webmvc'
+    //Logging Log4j2
     implementation 'org.apache.logging.log4j:log4j-api'
     implementation 'org.apache.logging.log4j:log4j-core'
+    //MapStruct
+    implementation 'org.mapstruct:mapstruct:1.5.5.Final'
+    annotationProcessor 'org.mapstruct:mapstruct-processor:1.5.5.Final'
+    annotationProcessor 'org.projectlombok:lombok-mapstruct-binding:0.2.0'
+    //SpringDoc OpenAPI para Spring WebMVC y UI (Swagger-UI)
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+    //Lombok
     compileOnly 'org.projectlombok:lombok'
+
     runtimeOnly 'org.postgresql:postgresql'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation 'org.springframework.boot:spring-boot-starter-data-jpa-test'
