@@ -3,7 +3,7 @@ package org.wposs.plataforma_polaris_cloud.models.auth;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.wposs.plataforma_polaris_cloud.models.auth.enums.RolesEnum;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -20,6 +20,9 @@ public class RoleEntity {
     private Long id;
 
     @Column(name = "role_name")
-    @Enumerated(EnumType.STRING)
-    private RolesEnum roleEnum;
+    private String name;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(name = "roles_permissions", joinColumns = @JoinColumn(name = "role_id"), inverseJoinColumns = @JoinColumn(name = "permission_id"))
+    private Set<PermissionEntity> permissions;
 }

@@ -21,14 +21,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        UserEntity userEntity = userRepository.findUserEntityByEmail(email)
-                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
+        UserEntity userEntity = userRepository.findUserEntityByEmail(email).orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado con email: " + email));
 
         List<SimpleGrantedAuthority> authorityList = new ArrayList<>();
 
-        userEntity.getRoles().forEach(role ->
-                authorityList.add(new SimpleGrantedAuthority("ROLE_".concat(role.getRoleEnum().name())))
-        );
+        // Busca los roles del usuario
+        userEntity.getRoles().forEach(role -> authorityList.add(new SimpleGrantedAuthority("ROLE_".concat(role.getName()))));
+
+        // Busca los permisos de cada rol
+        userEntity.getRoles().stream().flatMap(role -> role.getPermissions().stream()).forEach(permission -> authorityList.add(new SimpleGrantedAuthority(permission.getName())));
 
         return new User(
                 userEntity.getEmail(),
@@ -37,7 +38,6 @@ public class UserDetailsServiceImpl implements UserDetailsService {
                 userEntity.isAccountNonExpired(),
                 userEntity.isCredentialsNonExpired(),
                 userEntity.isAccountNonLocked(),
-                authorityList
-        );
+                authorityList);
     }
 }

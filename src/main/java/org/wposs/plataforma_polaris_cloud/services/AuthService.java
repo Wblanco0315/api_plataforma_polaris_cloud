@@ -56,13 +56,12 @@ public class AuthService implements UserDetailsService {
             throw new RuntimeException(e.getMessage());
         }
 
-        List<SimpleGrantedAuthority> authorityList = new ArrayList<>(); //Carga la lista de permisos
+        List<SimpleGrantedAuthority> authorityList = new ArrayList<>(); //Carga la lista de roles y permisos
 
         try {
-            // Busca los roles asignados en el registro
-            userEntity.getRoles().forEach(role -> authorityList.add(new SimpleGrantedAuthority("ROLE_".concat(role.getRoleEnum().name()))));
-
-        } catch (IllegalArgumentException e) {// Atrapa la exception al no encontrar rol/roles asignados
+            userEntity.getRoles().forEach(role -> authorityList.add(new SimpleGrantedAuthority("ROLE_".concat(role.getName()))));
+            userEntity.getRoles().stream().flatMap(role -> role.getPermissions().stream()).forEach(permission -> authorityList.add(new SimpleGrantedAuthority(permission.getName())));
+        } catch (IllegalArgumentException e) {
             log.error("Roles Invalidos: {}", e.getMessage());
             throw new RuntimeException("Rol/roles no existentes");
         }
@@ -107,7 +106,7 @@ public class AuthService implements UserDetailsService {
         Set<RoleEntity> roleEntityList;
         log.info("Intento de registro de usuario con email: {}", request.email());
         try {
-            roleEntityList = roleRepository.findRoleEntitiesByRoleEnumIn(request.roles()).stream().collect(Collectors.toSet());
+            roleEntityList = roleRepository.findRoleEntitiesByIdIn(request.roles()).stream().collect(Collectors.toSet());
         } catch (IllegalArgumentException ex) {
             rspMessage = "Roles Invalidos";
             log.error("Roles Invalidos: {}", ex.getMessage());

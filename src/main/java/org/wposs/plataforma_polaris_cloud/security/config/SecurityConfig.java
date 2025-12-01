@@ -20,7 +20,6 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.wposs.plataforma_polaris_cloud.security.filters.JwtTokenValidator;
 import org.wposs.plataforma_polaris_cloud.security.services.UserDetailsServiceImpl;
 import org.wposs.plataforma_polaris_cloud.security.services.utils.JWTUtils;
-import org.wposs.plataforma_polaris_cloud.services.AuthService;
 
 @Configuration
 @EnableWebSecurity

@@ -6,6 +6,7 @@ import jakarta.validation.constraints.Size;
 import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
+import java.util.Set;
 
 @Validated
 public record RegisterRequest(
@@ -20,7 +21,7 @@ public record RegisterRequest(
         @Size(min = 8, max = 16, message = "la contraseña debe tener minimo 8 caracteres")
         String password,
         @NotNull(message = "los roles no pueden ser nulos")
-        List<String> roles
+        Set<Long> roles
 ){
 
 }
