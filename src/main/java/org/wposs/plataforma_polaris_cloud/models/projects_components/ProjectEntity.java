@@ -2,8 +2,11 @@ package org.wposs.plataforma_polaris_cloud.models.projects_components;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.sql.Date;
+import java.util.List;
 
 @Builder
 @AllArgsConstructor
@@ -38,4 +41,21 @@ public class ProjectEntity {
     @JoinColumn(name = "customer_id", nullable = false)
     private CustomerEntity customer;
 
+    @ManyToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+    @JoinTable(name = "project_components", joinColumns = @JoinColumn(name = "project_id"), inverseJoinColumns = @JoinColumn(name = "component_id"))
+    private List<ComponentEntity> components;
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    @CreationTimestamp
+    private Date createdAt;
+
+    @Column(name = "updated_at")
+    @UpdateTimestamp
+    private Date updatedAt;
+
+    @Column(name = "created_by", nullable = false, updatable = false)
+    private String createdBy;
+
+    @Column(name = "updated_by")
+    private String updatedBy;
 }

@@ -19,7 +19,7 @@ public class RoleEntity {
     @Column(name = "role_id", unique = true)
     private Long id;
 
-    @Column(name = "role_name")
+    @Column(name = "role_name", nullable = false, unique = true)
     private String name;
 
     @ManyToMany(fetch = FetchType.LAZY)

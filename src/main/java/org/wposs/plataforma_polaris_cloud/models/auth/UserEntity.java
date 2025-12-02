@@ -7,7 +7,6 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.sql.Timestamp;
-import java.util.HashSet;
 import java.util.Set;
 
 @Getter
@@ -25,36 +24,41 @@ public class UserEntity {
     @Column(name = "user_id")
     private Long id;
 
-    @Column(name = "name")
+    @Column(name = "name", length = 50)
     @NotNull
     private String name;
 
-    @Column(name = "lastname")
+    @Column(name = "lastname", length = 50)
     @NotNull
     private String lastname;
 
-    @Column(name = "email")
+    @Column(name = "email", unique = true, length = 100)
     @NotNull
     @Email
     private String email;
 
-    @Column(name = "password")
+    @Column(name = "password", nullable = false)
+    @NotNull
     private String password;
 
-    @Column(name = "is_enable")
+    @Column(name = "is_enable", nullable = false)
+    @NotNull
     private boolean isEnabled;
 
-    @Column(name = "account_no_expired")
+    @NotNull
+    @Column(name = "account_no_expired", nullable = false)
     private boolean isAccountNonExpired;
 
-    @Column(name = "account_no_locked")
+    @NotNull
+    @Column(name = "account_no_locked", nullable = false)
     private boolean isAccountNonLocked;
 
-    @Column(name = "credential_no_expired")
+    @NotNull
+    @Column(name = "credential_no_expired", nullable = false)
     private boolean isCredentialsNonExpired;
 
     @CreationTimestamp
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private Timestamp createdAt;
 
     @UpdateTimestamp

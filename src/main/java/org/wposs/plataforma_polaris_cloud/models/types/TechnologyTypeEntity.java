@@ -2,7 +2,6 @@ package org.wposs.plataforma_polaris_cloud.models.types;
 
 import jakarta.persistence.*;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
 
 @Builder
 @AllArgsConstructor

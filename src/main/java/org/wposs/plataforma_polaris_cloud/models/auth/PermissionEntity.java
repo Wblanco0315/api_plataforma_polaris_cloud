@@ -13,7 +13,7 @@ import lombok.*;
 public class PermissionEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "permission_id", nullable = false)
+    @Column(name = "permission_id")
     private Long id;
 
     @Column(name = "permission_name", nullable = false, unique = true)

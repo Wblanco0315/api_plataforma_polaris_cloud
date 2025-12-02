@@ -1,6 +1,7 @@
-package org.wposs.plataforma_polaris_cloud.models.types;
+package org.wposs.plataforma_polaris_cloud.models.projects_components;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -13,15 +14,20 @@ import java.sql.Date;
 @Getter
 @Setter
 @Entity
-@Table(name = "environment_types")
-public class EnvironmentTypeEntity {
+@Table(name = "components_repositories")
+public class ComponentRepositoryEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "environment_type_id",nullable = false)
+    @GeneratedValue(strategy = GenerationType.AUTO)
+    @Column(nullable = false, name = "component_repository_id")
     private Long id;
 
-    @Column(name = "type_name", nullable = false)
-    private String name;
+    @NotNull
+    @Column(name = "repository_url", nullable = false)
+    private String repositoryUrl;
+
+    @NotNull
+    @Column(name = "repository_name", nullable = false)
+    private String repositoryName;
 
     @Column(name = "created_at", nullable = false, updatable = false)
     @CreationTimestamp
