@@ -24,9 +24,9 @@ public record RegisterRequest(
         @Size(min = 8, max = 16, message = "la contraseña debe tener minimo 8 caracteres")
         @Schema(description = "Contraseña (mínimo 8, máximo 16 caracteres)", example = "Password123*")
         String password,
-        @NotNull(message = "los roles no pueden ser nulos")
-        @Schema(description = "Lista de roles a asignar por id del rol (ej: [\"1\"])")
-        Set<Long> roles
+        @NotNull
+        @Schema(description = "Lista de roles a asignar por id del rol (ej: [\"ADMIN\"])")
+        Set<String> roles
 ){
 
 }

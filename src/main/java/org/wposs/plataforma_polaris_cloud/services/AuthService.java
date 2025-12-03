@@ -51,7 +51,7 @@ public class AuthService implements UserDetailsService {
         try {
             log.info("Buscando usuario por email: {}", email);
             userEntity = userRepository.findUserEntityByEmail(email).orElseThrow(() -> new AuthException("usuario no registrado"));
-        } catch (UsernameNotFoundException | AuthException e) {//No encontro al usuario, arroja la exeption
+        } catch (UsernameNotFoundException | AuthException e) {
             log.error("Error al buscar al usuario: {}", e.getMessage());
             throw new RuntimeException(e.getMessage());
         }
@@ -105,8 +105,9 @@ public class AuthService implements UserDetailsService {
         String rspMessage = "";
         Set<RoleEntity> roleEntityList;
         log.info("Intento de registro de usuario con email: {}", request.email());
+
         try {
-            roleEntityList = roleRepository.findRoleEntitiesByIdIn(request.roles()).stream().collect(Collectors.toSet());
+            roleEntityList = roleRepository.findRoleEntitiesByNameIn(request.roles()).stream().collect(Collectors.toSet());
         } catch (IllegalArgumentException ex) {
             rspMessage = "Roles Invalidos";
             log.error("Roles Invalidos: {}", ex.getMessage());

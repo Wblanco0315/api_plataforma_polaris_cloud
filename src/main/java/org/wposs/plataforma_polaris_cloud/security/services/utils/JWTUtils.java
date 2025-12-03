@@ -45,7 +45,7 @@ public class JWTUtils {
 
         return JWT.create()
                 .withIssuer(this.userGenerator)
-                .withSubject(userDetails.getUsername()) // El email suele ser el username
+                .withSubject(userDetails.getUsername())
                 .withClaim("authorities", authorities)
                 .withIssuedAt(new Date())
                 .withExpiresAt(new Date(System.currentTimeMillis() + 86400000))

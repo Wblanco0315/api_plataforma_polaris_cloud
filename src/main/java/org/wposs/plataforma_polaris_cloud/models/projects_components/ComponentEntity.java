@@ -29,6 +29,10 @@ public class ComponentEntity {
     @JoinColumn(name = "component_type_id", referencedColumnName = "component_type_id", nullable = false)
     private ComponentTypeEntity componentType;
 
+    @Column(name = "component_name", nullable = false)
+    @NotNull
+    private String name;
+
     @OneToOne(cascade = CascadeType.ALL)
     @JoinColumn(name = "environment_id", referencedColumnName = "environment_id", nullable = false)
     private EnvironmentEntity environment;
