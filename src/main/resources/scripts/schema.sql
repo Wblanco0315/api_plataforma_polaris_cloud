@@ -63,12 +63,12 @@ CREATE TABLE components_repositories
 
 CREATE TABLE environments
 (
-    environment_id      BIGSERIAL    NOT NULL PRIMARY KEY,
+    environment_id      BIGSERIAL              NOT NULL PRIMARY KEY,
     environment_url     TEXT DEFAULT 'NOT_SET' NOT NULL,
-    environment_type_id BIGINT       NOT NULL
+    environment_type_id BIGINT                 NOT NULL
         CONSTRAINT fk_env_type
             REFERENCES environment_types,
-    server_type_id      BIGINT       NOT NULL
+    server_type_id      BIGINT                 NOT NULL
         CONSTRAINT fk_server_type
             REFERENCES server_types
 );
@@ -88,6 +88,7 @@ CREATE TABLE components
     component_name          VARCHAR(255)                        NOT NULL,
     component_description   TEXT,
     component_notes         TEXT,
+    component_parent_id     BIGINT,
     component_repository_id BIGINT                              NOT NULL
         CONSTRAINT fk_comp_repo REFERENCES components_repositories,
     component_type_id       BIGINT                              NOT NULL
