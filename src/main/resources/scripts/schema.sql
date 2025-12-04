@@ -1,232 +1,136 @@
+DROP SCHEMA IF EXISTS public CASCADE;
+CREATE SCHEMA public;
+
+CREATE TABLE customers
+(
+    customer_id   BIGSERIAL PRIMARY KEY,
+    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    customer_name VARCHAR(255)                        NOT NULL
+);
+
+CREATE TABLE projects
+(
+    project_id          BIGSERIAL PRIMARY KEY,
+    customer_id         BIGINT                              NOT NULL
+        CONSTRAINT fk_projects_customers
+            REFERENCES customers,
+    project_name        VARCHAR(255)                        NOT NULL,
+    project_description TEXT,
+    status              VARCHAR(255)                        NOT NULL,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_by          VARCHAR(255)                        NOT NULL,
+    end_date            DATE,
+    start_date          DATE                                NOT NULL,
+    updated_by          VARCHAR(255),
+    updated_at          TIMESTAMP
+);
+
+-- Tipos
 CREATE TABLE component_types
 (
-    created_at        DATE         NOT NULL,
-    upDATEd_at        DATE,
     component_type_id BIGSERIAL PRIMARY KEY,
-    created_by        VARCHAR(255) NOT NULL,
-    type_name         VARCHAR(255) NOT NULL,
-    upDATEd_by        VARCHAR(255)
+    type_name         VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE environment_types
+(
+    environment_type_id BIGSERIAL PRIMARY KEY,
+    type_name           VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE server_types
+(
+    server_type_id BIGSERIAL PRIMARY KEY,
+    type_name      VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE tech_types
+(
+    tech_type_id BIGSERIAL PRIMARY KEY,
+    type_name    VARCHAR(255) NOT NULL
+);
+
+CREATE TABLE components_repositories
+(
+    component_repository_id BIGSERIAL                           NOT NULL PRIMARY KEY,
+    repository_name         VARCHAR(255)                        NOT NULL,
+    repository_url          TEXT                                NOT NULL,
+    created_by              VARCHAR(255)                        NOT NULL,
+    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    updated_at              TIMESTAMP,
+    updated_by              VARCHAR(255)
+);
+
+CREATE TABLE environments
+(
+    environment_id      BIGSERIAL    NOT NULL PRIMARY KEY,
+    environment_url     TEXT DEFAULT 'NOT_SET' NOT NULL,
+    environment_type_id BIGINT       NOT NULL
+        CONSTRAINT fk_env_type
+            REFERENCES environment_types,
+    server_type_id      BIGINT       NOT NULL
+        CONSTRAINT fk_server_type
+            REFERENCES server_types
+);
+
+CREATE TABLE tech_type_versions
+(
+    technology_type_version_id BIGSERIAL PRIMARY KEY NOT NULL,
+    version                    VARCHAR(255)          NOT NULL,
+    tech_type_id               BIGINT                NOT NULL
+        CONSTRAINT fk_tech_type
+            REFERENCES tech_types
+);
+
+CREATE TABLE components
+(
+    component_id            BIGSERIAL PRIMARY KEY               NOT NULL,
+    component_name          VARCHAR(255)                        NOT NULL,
+    component_description   TEXT,
+    component_notes         TEXT,
+    component_repository_id BIGINT                              NOT NULL
+        CONSTRAINT fk_comp_repo REFERENCES components_repositories,
+    component_type_id       BIGINT                              NOT NULL
+        CONSTRAINT fk_component_type
+            REFERENCES component_types,
+    environment_id          BIGINT                              NOT NULL
+        CONSTRAINT fk_environment
+            REFERENCES environments,
+    tech_type_version_id    BIGINT                              NOT NULL
+        CONSTRAINT fk_tech_version
+            REFERENCES tech_type_versions,
+    project_id              BIGINT                              NOT NULL
+        CONSTRAINT fk_component_project
+            REFERENCES projects,
+    created_by              VARCHAR(255)                        NOT NULL,
+    created_at              TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    port_number             INTEGER                             NOT NULL,
+    dns                     VARCHAR(255),
+    updated_by              VARCHAR(255),
+    updated_at              TIMESTAMP
 );
 
 CREATE TABLE component_fields
 (
     field_index        INTEGER      NOT NULL,
     is_required        BOOLEAN      NOT NULL,
-    component_field_id BIGSERIAL primary key,
-    component_type_id  bigint       NOT NULL
-        constraint fkcq8nbqeenv5cuq00v7o5yb6ii
-            references component_types,
+    component_field_id BIGSERIAL PRIMARY KEY,
+    component_type_id  BIGINT       NOT NULL
+        CONSTRAINT fk_component_field_type
+            REFERENCES component_types,
     default_value      VARCHAR(255),
     field_name         VARCHAR(255) NOT NULL,
     field_type         VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE components_repositories
-(
-    created_at              DATE         NOT NULL,
-    upDATEd_at              DATE,
-    component_repository_id bigint       NOT NULL primary key,
-    created_by              VARCHAR(255) NOT NULL,
-    repository_name         VARCHAR(255) NOT NULL,
-    repository_url          VARCHAR(255) NOT NULL,
-    upDATEd_by              VARCHAR(255)
-);
-
-CREATE TABLE customers
-(
-    customer_id   bigint       NOT NULL
-        primary key,
-    create_at     VARCHAR(255) NOT NULL,
-    customer_name VARCHAR(255) NOT NULL,
-    upDATE_at     VARCHAR(255)
-);
-
-CREATE TABLE environment_types
-(
-    created_at          DATE         NOT NULL,
-    upDATEd_at          DATE,
-    environment_type_id bigint generated by default as identity
-        primary key,
-    created_by          VARCHAR(255) NOT NULL,
-    type_name           VARCHAR(255) NOT NULL,
-    upDATEd_by          VARCHAR(255)
-);
-
-CREATE TABLE permissions
-(
-    permission_id   bigint generated by default as identity
-        primary key,
-    permission_name VARCHAR(255) NOT NULL
-        unique
-);
-
-CREATE TABLE projects
-(
-    created_at          DATE         NOT NULL,
-    end_DATE            DATE,
-    start_DATE          DATE         NOT NULL,
-    upDATEd_at          DATE,
-    customer_id         bigint       NOT NULL
-        constraint fk4rpwuljjwr5rygq9gwx36q8cj
-            references customers,
-    project_id          bigint generated by default as identity
-        primary key,
-    created_by          VARCHAR(255) NOT NULL,
-    project_description VARCHAR(255),
-    project_name        VARCHAR(255) NOT NULL,
-    status              VARCHAR(255) NOT NULL,
-    upDATEd_by          VARCHAR(255)
-);
-
-CREATE TABLE customer_projects
-(
-    customer_id bigint NOT NULL
-        constraint fksdp09o4y1vhdypjhys5h24t24
-            references customers,
-    project_id  bigint NOT NULL
-        constraint fkbe2it5qmqcyoiefmfexw5iheo
-            references projects,
-    primary key (customer_id, project_id)
-);
-
-CREATE TABLE roles
-(
-    role_id   bigint generated by default as identity
-        primary key,
-    role_name VARCHAR(255) NOT NULL
-        unique
-);
-
-
-CREATE TABLE roles_permissions
-(
-    permission_id bigint NOT NULL
-        constraint fkbx9r9uw77p58gsq4mus0mec0o
-            references permissions,
-    role_id       bigint NOT NULL
-        constraint fkqi9odri6c1o81vjox54eedwyh
-            references roles,
-    primary key (permission_id, role_id)
-);
-
-CREATE TABLE server_types
-(
-    server_type_id bigint generated by default as identity
-        primary key,
-    type_name      VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE environments
-(
-    environment_id      bigint       NOT NULL
-        primary key,
-    environment_type_id bigint       NOT NULL
-        constraint fk_env_type
-            references environment_types,
-    server_type_id      bigint       NOT NULL
-        constraint fk_server_type
-            references server_types,
-    environment_name    VARCHAR(255) NOT NULL,
-    environment_url     VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE environment_ports
-(
-    is_available   BOOLEAN NOT NULL,
-    port_number    INTEGER NOT NULL,
-    environment_id bigint  NOT NULL
-        constraint fk2phrs3645qcyeqodkstj4blvv
-            references environments,
-    primary key (port_number, environment_id)
-);
-
-CREATE TABLE technology_types
-(
-    technology_type_id bigint generated by default as identity
-        primary key,
-    type_name          VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE technology_type_versions
-(
-    technology_type_id         bigint       NOT NULL
-        constraint fkjv261ir7qg8getalnny8xv8u5
-            references technology_types,
-    technology_type_version_id bigint generated by default as identity
-        primary key,
-    version                    VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE components
-(
-    created_at                 DATE         NOT NULL,
-    port_number                INTEGER      NOT NULL,
-    upDATEd_at                 DATE,
-    component_id               bigint       NOT NULL
-        primary key,
-    component_repository_id    bigint       NOT NULL,
-    component_type_id          bigint       NOT NULL
-        constraint fk_component_type
-            references component_types,
-    environment_id             bigint       NOT NULL
-        constraint fk_environment
-            references environments,
-    technology_type_version_id bigint       NOT NULL
-        constraint fk_tech_version
-            references technology_type_versions,
-    created_by                 VARCHAR(255) NOT NULL,
-    dns                        VARCHAR(255),
-    upDATEd_by                 VARCHAR(255)
-);
-
 CREATE TABLE field_values
 (
-    component_field_id   bigint       NOT NULL
-        constraint fkcmxulv1ng42hbawkrciby35ph
-            references component_fields,
-    field_value_id       bigint generated by default as identity
-        primary key,
-    project_component_id bigint       NOT NULL
-        constraint fkq1gustyobx284g74mmxgrf73a
-            references components,
-    value                VARCHAR(255) NOT NULL
+    field_value_id       BIGSERIAL PRIMARY KEY,
+    value                VARCHAR(255) NOT NULL,
+    component_field_id   BIGINT       NOT NULL
+        CONSTRAINT fk_fv_component_field
+            REFERENCES component_fields,
+    project_component_id BIGINT       NOT NULL
+        CONSTRAINT fk_fv_project_component
+            REFERENCES components
 );
-
-CREATE TABLE project_components
-(
-    component_id bigint NOT NULL
-        constraint fkkfa32mumallhqnyaxx01q201y
-            references components,
-    project_id   bigint NOT NULL
-        constraint fk8rw21brqqj0hgyp248321gqh7
-            references projects
-);
-
-CREATE TABLE users
-(
-    account_no_expired    BOOLEAN      NOT NULL,
-    account_no_locked     BOOLEAN      NOT NULL,
-    credential_no_expired BOOLEAN      NOT NULL,
-    is_enable             BOOLEAN      NOT NULL,
-    created_at            timestamp(6),
-    upDATEd_at            timestamp(6),
-    user_id               bigint       NOT NULL
-        primary key,
-    lastname              VARCHAR(50)  NOT NULL,
-    name                  VARCHAR(50)  NOT NULL,
-    email                 VARCHAR(100) NOT NULL
-        unique,
-    password              VARCHAR(255) NOT NULL
-);
-
-CREATE TABLE user_role
-(
-    role_id bigint NOT NULL
-        constraint fkt7e7djp752sqn6w22i6ocqy6q
-            references roles,
-    user_id bigint NOT NULL
-        constraint fkj345gk1bovqvfame88rcx7yyx
-            references users,
-    primary key (role_id, user_id)
-);
-
