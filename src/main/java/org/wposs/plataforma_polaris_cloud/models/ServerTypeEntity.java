@@ -1,11 +1,11 @@
-package org.wposs.plataforma_polaris_cloud.models.types;
+package org.wposs.plataforma_polaris_cloud.models;
 
 import jakarta.persistence.*;
-import lombok.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
 
-@Builder
-@AllArgsConstructor
-@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -16,6 +16,9 @@ public class ServerTypeEntity {
     @Column(name = "server_type_id", nullable = false)
     private Long id;
 
+    @Size(max = 255)
+    @NotNull
     @Column(name = "type_name", nullable = false)
-    private String name;
+    private String typeName;
+
 }
