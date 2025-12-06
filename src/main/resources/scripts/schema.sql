@@ -1,28 +1,49 @@
 DROP SCHEMA IF EXISTS public CASCADE;
 CREATE SCHEMA public;
 
+CREATE TABLE countries
+(
+    country_id   BIGSERIAL PRIMARY KEY,
+    country_name VARCHAR(255) NOT NULL,
+    code_iso     VARCHAR(3)   NOT NULL UNIQUE
+);
+
 CREATE TABLE customers
 (
     customer_id   BIGSERIAL PRIMARY KEY,
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    customer_name VARCHAR(255)                        NOT NULL
+    customer_name VARCHAR(255)                        NOT NULL,
+    country_id    BIGINT                              NOT NULL
+        CONSTRAINT fk_customers_countries
+            REFERENCES countries
+);
+
+CREATE TABLE product_types
+(
+    product_type_id     BIGSERIAL PRIMARY KEY,
+    product_name        VARCHAR(255)                        NOT NULL,
+    product_logo_base64 TEXT,
+    product_description TEXT,
+    type_name           VARCHAR(255)                        NOT NULL,
+    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
 );
 
 CREATE TABLE projects
 (
-    project_id          BIGSERIAL PRIMARY KEY,
-    customer_id         BIGINT                              NOT NULL
+    project_id      BIGSERIAL PRIMARY KEY,
+    customer_id     BIGINT                              NOT NULL
         CONSTRAINT fk_projects_customers
             REFERENCES customers,
-    project_name        VARCHAR(255)                        NOT NULL,
-    project_description TEXT,
-    status              VARCHAR(255)                        NOT NULL,
-    created_at          TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    created_by          VARCHAR(255)                        NOT NULL,
-    end_date            DATE,
-    start_date          DATE                                NOT NULL,
-    updated_by          VARCHAR(255),
-    updated_at          TIMESTAMP
+    product_type_id BIGINT                              NOT NULL
+        CONSTRAINT fk_projects_product_types
+            REFERENCES product_types,
+    status          VARCHAR(255)                        NOT NULL,
+    created_at      TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    created_by      VARCHAR(255)                        NOT NULL,
+    end_date        DATE,
+    start_date      DATE                                NOT NULL,
+    updated_by      VARCHAR(255),
+    updated_at      TIMESTAMP
 );
 
 -- Tipos
@@ -134,4 +155,41 @@ CREATE TABLE field_values
     project_component_id BIGINT       NOT NULL
         CONSTRAINT fk_fv_project_component
             REFERENCES components
+);
+
+-- GESTION DE EQUIPOS Y MIEMBROS
+CREATE TABLE team_role_types
+(
+    team_role_type_id BIGSERIAL PRIMARY KEY,
+    type_name         VARCHAR(100) NOT NULL UNIQUE
+);
+
+CREATE TABLE teams
+(
+    team_id     BIGSERIAL PRIMARY KEY,
+    team_name   VARCHAR(255)                        NOT NULL UNIQUE,
+    description TEXT,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL
+);
+
+CREATE TABLE project_teams
+(
+    project_id  BIGINT                              NOT NULL
+        CONSTRAINT fk_pt_project REFERENCES projects,
+    team_id     BIGINT                              NOT NULL
+        CONSTRAINT fk_pt_team REFERENCES teams,
+    assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    PRIMARY KEY (project_id, team_id) -- Evita duplicados
+);
+
+CREATE TABLE project_members
+(
+    project_member_id BIGSERIAL PRIMARY KEY,
+    project_id        BIGINT                                 NOT NULL
+        CONSTRAINT fk_pm_project REFERENCES projects,
+    user_id           BIGINT                                 NOT NULL
+        CONSTRAINT fk_pm_user REFERENCES users,
+    role_in_project   VARCHAR(100) DEFAULT 'MIEMBRO'         NOT NULL CHECK (role_in_project IN ('MIEMBRO', 'LIDER', 'PRESTAMO')),
+    assigned_at       TIMESTAMP    DEFAULT CURRENT_TIMESTAMP NOT NULL,
+    UNIQUE (project_id, user_id) -- Evita duplicados
 );

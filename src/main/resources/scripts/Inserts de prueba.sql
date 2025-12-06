@@ -1,3 +1,7 @@
+--Usuarios
+INSERT INTO public.users (id, name, email, email_verified_at, password, remember_token, current_team_id, profile_photo_path, created_at, updated_at, two_factor_secret, two_factor_recovery_codes, two_factor_confirmed_at, team_role_type_id, team_id) VALUES (1, 'Wilson Blanco', 'wilsonblanco@wposs.com', null, '$2y$12$CZ4obn8YSUT7UyXutDplh.AApp03lGhTN13FsfzxhaYmgzcx6uOwq', null, null, null, '2025-12-05 20:55:44', '2025-12-05 20:55:44', null, null, null, null, null);
+
+
 -- 1. Insertar CLIENTES
 INSERT INTO customers (customer_name)
 VALUES ('MEDIANET'),
